@@ -1,0 +1,2 @@
+Destination RabbitMQ AMQP component
+===================================
