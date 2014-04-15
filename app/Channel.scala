@@ -28,7 +28,7 @@ private object Utils {
 class Channel(channel: RMQChannel) {
   private val validExchangeTypes = Set('direct, 'fanout, 'topic)
 
-  def createExchange(
+  def declareExchange(
     name:         String,
     exchangeType: Symbol = 'direct,
     durable:      Boolean = false,
@@ -48,7 +48,7 @@ class Channel(channel: RMQChannel) {
     channel.exchangeDelete(name)
   }
 
-  def createQueue(
+  def declareQueue(
     name:       String,
     durable:    Boolean = false,
     exclusive:  Boolean = false,
@@ -59,12 +59,12 @@ class Channel(channel: RMQChannel) {
     getQueue(name)
   }
 
-  def getQueue(name: String): Queue = new Queue(name, channel)
-
-  def createQueue(): Queue = {
+  def declareQueue(): Queue = {
     val name = channel.queueDeclare().getQueue()
     new Queue(name, channel)
   }
+
+  def getQueue(name: String): Queue = new Queue(name, channel)
 
   def recover(requeue: Boolean = true) {
     channel.basicRecover(requeue)
