@@ -17,7 +17,7 @@ import com.rabbitmq.client.Consumer
 import com.rabbitmq.client.ShutdownSignalException
 
 class Queue(val name: String, val channel: RMQChannel) {
-  private var consumers: mutable.Map[String, ActorConsumerAdapter] = mutable.Map.empty
+  private var consumers: mutable.Map[String, ActorConsumer] = mutable.Map.empty
 
   def bind(exchange: Exchange, routingKey: String) = {
     channel.queueBind(name, exchange.name, routingKey)
@@ -29,9 +29,9 @@ class Queue(val name: String, val channel: RMQChannel) {
 
   def subscribe(subscriber: ActorRef, autoAck: Boolean = true) : ActorRef = {
     val path = subscriber.path.toString
-    val consumerAdapter = TypedActor(Akka.system).typedActorOf(TypedProps(classOf[Consumer], new ActorConsumerAdapter(subscriber, this)))
+    val consumerAdapter = TypedActor(Akka.system).typedActorOf(TypedProps(classOf[ActorConsumer], new ActorConsumerAdapter(subscriber, this)))
     channel.basicConsume(name, autoAck, consumerAdapter)
-    // consumers += (path -> consumerAdapter)
+    consumers += (path -> consumerAdapter)
     subscriber
   }
 

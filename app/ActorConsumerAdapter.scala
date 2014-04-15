@@ -11,7 +11,11 @@ import com.rabbitmq.client.Consumer
 import com.rabbitmq.client.Envelope
 import com.rabbitmq.client.ShutdownSignalException
 
-class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends Consumer with TypedActor.Receiver {
+trait ActorConsumer extends Consumer {
+  def consumerTag: String
+}
+
+class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends ActorConsumer with TypedActor.Receiver {
   import TypedActor.dispatcher
   import Queue._
 
@@ -21,15 +25,15 @@ class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends Consumer wi
   def onReceive (message: Any, sender: ActorRef) = {
     message match {
       case msg @ Ack(deliveryTag, multiple) => {
-        Logger.debug(s"Acknowleging  message #${deliveryTag}: '${msg}'")
+        Logger.trace(s"Acknowleging  message #${deliveryTag}: '${msg}'")
         queue.channel.basicAck(deliveryTag, multiple)
       }
       case msg @ Reject(deliveryTag, requeue) => {
-        Logger.debug(s"Rejecting message #${deliveryTag}: '${msg}', requeuing: ${requeue}")
+        Logger.trace(s"Rejecting message #${deliveryTag}: '${msg}', requeuing: ${requeue}")
         queue.channel.basicReject(deliveryTag, requeue)
       }
       case Accept(deliveryTag) => {
-        Logger.debug(s"Message #{deliveryTag} has been accepted by recipient.")
+        Logger.trace(s"Message #{deliveryTag} has been accepted by recipient.")
       }
     }
   }
