@@ -7,11 +7,12 @@ import akka.actor.TypedActor
 
 import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.Consumer
+import com.rabbitmq.client.ReturnListener
 
 import com.rabbitmq.client.Envelope
 import com.rabbitmq.client.ShutdownSignalException
 
-trait ActorConsumer extends Consumer {
+trait ActorConsumer extends Consumer with ReturnListener {
   def consumerTag: String
 }
 
@@ -44,6 +45,13 @@ class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends ActorConsum
     consumer ! IncomingMessage(consumerTag, envelope, properties, message)
   }
 
+  override def handleReturn(replyCode: Int, replyText: String, exchange: String, routingKey: String, properties: AMQP.BasicProperties, body: Array[Byte]) {
+    val message = new String(body, "UTF-8")
+    Logger.trace(s"{consumer.path} - Received returned message: ${replyText}")
+    consumer ! ReturnedMessage(replyCode, replyText, exchange, routingKey, properties, message)
+  }
+
+
   override def handleConsumeOk(consumerTag: String) {
     _consumerTag = consumerTag
     Logger.trace(s"${consumer.path} - Consume ok received (${consumerTag})")
@@ -64,6 +72,7 @@ class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends ActorConsum
     Logger.trace("{consumer.path} - Recover ok received, informing actor")
     consumer ! RecoverOk(consumerTag)
   }
+
 
   override def handleShutdownSignal(consumerTag: String, sig: ShutdownSignalException) {
     Logger.trace("{consumer.path} - Connection shutdown, informing actor")

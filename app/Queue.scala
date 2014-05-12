@@ -63,8 +63,9 @@ object Queue {
   case class ShutdownSignal(consumerTag: String, sig: ShutdownSignalException)  extends ShutdownMessage
   case object UnexpectedShutdown                                                extends ShutdownMessage
 
-  // Received message envelope
+  // Delivery messages
   case class IncomingMessage(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: String)
+  case class ReturnedMessage(replyCode: Int, replyText: String, exchange: String, routingKey: String, properties: AMQP.BasicProperties, body: String)
 
   // Confirmation messages to let the MQ know what to do with the message
   trait ConfirmationResponse
