@@ -7,12 +7,11 @@ import akka.actor.TypedActor
 
 import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.Consumer
-import com.rabbitmq.client.ReturnListener
 
 import com.rabbitmq.client.Envelope
 import com.rabbitmq.client.ShutdownSignalException
 
-trait ActorConsumer extends Consumer with ReturnListener {
+trait ActorConsumer extends Consumer {
   def consumerTag: String
 }
 
@@ -29,12 +28,16 @@ class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends ActorConsum
         Logger.trace(s"{consumer.path} - Acknowleging message #${deliveryTag}: '${msg}'")
         queue.channel.basicAck(deliveryTag, multiple)
       }
-      case msg @ Reject(deliveryTag, requeue) => {
-        Logger.trace(s"{consumer.path} - Rejecting message #${deliveryTag}: '${msg}', requeuing: ${requeue}")
-        queue.channel.basicReject(deliveryTag, requeue)
+      case msg @ Nack(deliveryTag, multiple, requeue) => {
+        Logger.trace(s"{consumer.path} - Rejecting message #${deliveryTag}: '${msg}'")
+        queue.channel.basicNack(deliveryTag, multiple, requeue.getOrElse(false))
       }
       case Accept(deliveryTag) => {
         Logger.trace(s"Message #{deliveryTag} has been accepted by {consumer.path}.")
+      }
+      case msg @ Reject(deliveryTag, requeue) => {
+        Logger.trace(s"{consumer.path} - Rejecting message #${deliveryTag}: '${msg}', requeuing: ${requeue}")
+        queue.channel.basicReject(deliveryTag, requeue)
       }
     }
   }
@@ -43,12 +46,6 @@ class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends ActorConsum
     val message = new String(body, "UTF-8")
     Logger.trace(s"{consumer.path} - Received message from queue '${queue.name}': ${message}")
     consumer ! IncomingMessage(consumerTag, envelope, properties, message)
-  }
-
-  override def handleReturn(replyCode: Int, replyText: String, exchange: String, routingKey: String, properties: AMQP.BasicProperties, body: Array[Byte]) {
-    val message = new String(body, "UTF-8")
-    Logger.trace(s"{consumer.path} - Received returned message: ${replyText}")
-    consumer ! ReturnedMessage(replyCode, replyText, exchange, routingKey, properties, message)
   }
 
 
