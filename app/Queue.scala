@@ -1,7 +1,6 @@
 package dst.amqp
 
 import play.api.Play.current
-import play.Logger
 
 import play.api.libs.concurrent.Akka
 import akka.actor.TypedActor
