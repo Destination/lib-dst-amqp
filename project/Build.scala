@@ -5,7 +5,7 @@ import play.Project._
 object ApplicationBuild extends Build {
 
   val appName         = "dst-amqp"
-  val appVersion      = "1.1"
+  val appVersion      = "1.2"
 
   val appDependencies = Seq(
     "com.rabbitmq" % "amqp-client" % "2.8.1"
