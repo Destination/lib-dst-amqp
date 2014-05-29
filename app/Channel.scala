@@ -78,7 +78,6 @@ class Channel(channel: RMQChannel) {
 
   def addReturnListener(listener: ActorRef) {
     this.synchronized {
-      play.Logger.debug(s"Adding listener adapter for ${listener.path.toString}")
       val listenerAdapter = listeners.getOrElseUpdate(listener.path.toString, new ActorListenerAdapter(listener))
       channel.addReturnListener(listenerAdapter)
       listenerAdapter
