@@ -1,8 +1,9 @@
 package dst.amqp
 
+import scala.util.Try
+
 import com.rabbitmq.client.{Channel => RMQChannel}
 import com.rabbitmq.client.MessageProperties
-// import com.rabbitmq.client.AMQP.BasicProperties
 
 class Exchange(val name: String, channel: RMQChannel) {
   import BasicPropertiesImplicit._
@@ -23,15 +24,15 @@ class Exchange(val name: String, channel: RMQChannel) {
     publish(routingKey, message.getBytes(encoding), mandatory, properties)
   }
 
-  def publish(routingKey: String, message: Array[Byte], mandatory: Boolean, properties: BasicProperties) {
+  def publish(routingKey: String, message: Array[Byte], mandatory: Boolean, properties: BasicProperties) = Try {
     channel.basicPublish(name, routingKey, mandatory, false, properties, message)
   }
 
-  def bind(routingKey: String, queues: Queue *) {
+  def bind(routingKey: String, queues: Queue *) = Try {
     queues.foreach(_.bind(this, routingKey))
   }
 
-  def delete() {
+  def delete() = Try {
     channel.exchangeDelete(name)
   }
 }

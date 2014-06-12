@@ -32,9 +32,6 @@ class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends ActorConsum
         Logger.trace(s"{consumer.path} - Rejecting message #${deliveryTag}: '${msg}'")
         queue.channel.basicNack(deliveryTag, multiple, requeue.getOrElse(false))
       }
-      case Accept(deliveryTag) => {
-        Logger.trace(s"Message #{deliveryTag} has been accepted by {consumer.path}.")
-      }
       case msg @ Reject(deliveryTag, requeue) => {
         Logger.trace(s"{consumer.path} - Rejecting message #${deliveryTag}: '${msg}', requeuing: ${requeue}")
         queue.channel.basicReject(deliveryTag, requeue)

@@ -1,5 +1,7 @@
 package dst.amqp
 
+import scala.util.Try
+
 import akka.actor.ActorRef
 
 import java.util.{Map => JavaMap}
@@ -11,7 +13,6 @@ import scala.collection.mutable
 import com.rabbitmq.client.{Channel => RMQChannel}
 import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.MessageProperties
-// import com.rabbitmq.client.Consumer
 import com.rabbitmq.client.ShutdownSignalException
 import com.rabbitmq.client.Envelope
 import com.rabbitmq.client.ConnectionFactory
@@ -39,17 +40,15 @@ class Channel(channel: RMQChannel) {
     durable:      Boolean = false,
     autoDelete:   Boolean = false,
     arguments:    Map[String, Any] = Map.empty
-  ): Exchange = {
+  ): Try[Exchange] = Try {
     if (! (validExchangeTypes contains exchangeType)) {
       throw new IllegalArgumentException("\"%s\" is not a valid exchange type".format(exchangeType.name))
     }
     channel.exchangeDeclare(name, exchangeType.name, durable, autoDelete, transformArguments(arguments))
-    getExchange(name)
+    new Exchange(name, channel)
   }
 
-  def getExchange(name: String): Exchange = new Exchange(name, channel)
-
-  def deleteExchange(name: String) {
+  def deleteExchange(name: String) = Try {
     channel.exchangeDelete(name)
   }
 
@@ -59,24 +58,22 @@ class Channel(channel: RMQChannel) {
     exclusive:  Boolean = false,
     autoDelete: Boolean = false,
     arguments:  Map[String, Any] = Map.empty
-  ): Queue = {
+  ): Try[Queue] = Try {
     channel.queueDeclare(name, durable, exclusive, autoDelete, transformArguments(arguments))
-    getQueue(name)
+    new Queue(name, channel)
   }
 
-  def declareQueue(): Queue = {
+  def declareQueue(): Try[Queue] = Try {
     val name = channel.queueDeclare().getQueue()
     new Queue(name, channel)
   }
 
-  def getQueue(name: String): Queue = new Queue(name, channel)
-
-  def recover(requeue: Boolean = true) {
+  def recover(requeue: Boolean = true) = Try {
     channel.basicRecover(requeue)
   }
 
 
-  def addReturnListener(listener: ActorRef) {
+  def addReturnListener(listener: ActorRef): Try[ActorListener] = Try{
     this.synchronized {
       val listenerAdapter = listeners.getOrElseUpdate(listener.path.toString, new ActorListenerAdapter(listener))
       channel.addReturnListener(listenerAdapter)
@@ -84,7 +81,7 @@ class Channel(channel: RMQChannel) {
     }
   }
 
-  def removeReturnListener(listener: ActorRef) {
+  def removeReturnListener(listener: ActorRef) = Try {
     val path = listener.path.toString
     this.synchronized {
       if (listeners contains path) {
@@ -96,7 +93,7 @@ class Channel(channel: RMQChannel) {
   }
 
 
-  def addConfirmListener(listener: ActorRef) {
+  def addConfirmListener(listener: ActorRef): Try[ActorListener] = Try{
     this.synchronized {
       val listenerAdapter = listeners.getOrElseUpdate(listener.path.toString, new ActorListenerAdapter(listener))
       channel.addConfirmListener(listenerAdapter)
@@ -104,7 +101,7 @@ class Channel(channel: RMQChannel) {
     }
   }
 
-  def removeConfirmListener(listener: ActorRef) {
+  def removeConfirmListener(listener: ActorRef) = Try {
     val path = listener.path.toString
     this.synchronized {
       if (listeners contains path) {

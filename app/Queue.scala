@@ -7,6 +7,7 @@ import akka.actor.TypedActor
 import akka.actor.TypedProps
 import akka.actor.ActorRef
 
+import scala.util.Try
 import scala.collection.mutable
 
 import com.rabbitmq.client.AMQP
@@ -18,15 +19,15 @@ import com.rabbitmq.client.ShutdownSignalException
 class Queue(val name: String, val channel: RMQChannel) {
   private val consumers: mutable.Map[String, ActorConsumer] = mutable.Map.empty
 
-  def bind(exchange: Exchange, routingKey: String) = {
+  def bind(exchange: Exchange, routingKey: String) = Try {
     channel.queueBind(name, exchange.name, routingKey)
   }
 
-  def unbind(exchange: Exchange, routingKey: String) = {
+  def unbind(exchange: Exchange, routingKey: String) = Try {
     channel.queueUnbind(name, exchange.name, routingKey)
   }
 
-  def subscribe(subscriber: ActorRef, autoAck: Boolean = true) : ActorRef = {
+  def subscribe(subscriber: ActorRef, autoAck: Boolean = true) : Try[ActorRef] = Try {
     this.synchronized {
       val path = subscriber.path.toString
       val consumerAdapter = TypedActor(Akka.system).typedActorOf(TypedProps(classOf[ActorConsumer], new ActorConsumerAdapter(subscriber, this)))
@@ -36,7 +37,7 @@ class Queue(val name: String, val channel: RMQChannel) {
     }
   }
 
-  def unsubscribe(subscriber: ActorRef) = {
+  def unsubscribe(subscriber: ActorRef) = Try {
     this.synchronized {
       val path = subscriber.path.toString
       if (consumers contains path) {
@@ -48,8 +49,12 @@ class Queue(val name: String, val channel: RMQChannel) {
     }
   }
 
-  def ack(deliveryTag: Long) = {
-    channel.basicAck(deliveryTag, false)
+  def ack(deliveryTag: Long, multiple: Boolean = false) = Try {
+    channel.basicAck(deliveryTag, multiple)
+  }
+
+  def nack(deliveryTag: Long, multiple: Boolean = false, requeue: Boolean = false) = Try {
+    channel.basicNack(deliveryTag, multiple, requeue)
   }
 }
 
@@ -60,20 +65,16 @@ object Queue {
   case class CancelOk   (consumerTag: String)                                                     extends ControlMessage
   case class Cancel     (consumerTag: String)                                                     extends ControlMessage
   case class RecoverOk  (consumerTag: String)                                                     extends ControlMessage
-
-  // Possible messages to signal channel shutdown
-  trait ShutdownMessage
-  case class ShutdownSignal(consumerTag: String, sig: ShutdownSignalException)                    extends ShutdownMessage
-  case object UnexpectedShutdown                                                                  extends ShutdownMessage
+  case class ShutdownSignal(consumerTag: String, sig: ShutdownSignalException)                    extends ControlMessage
 
   // Delivery messages
-  case class IncomingMessage(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: String)
-  case class ReturnedMessage(replyCode: Int, replyText: String, exchange: String, routingKey: String, properties: AMQP.BasicProperties, body: String)
+  trait DeliveryMessage
+  case class IncomingMessage(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: String)                                 extends DeliveryMessage
+  case class ReturnedMessage(replyCode: Int, replyText: String, exchange: String, routingKey: String, properties: AMQP.BasicProperties, body: String) extends DeliveryMessage
 
   // Confirmation messages to let the MQ know what to do with the message
   trait ConfirmationResponse
   case class Ack(deliveryTag: Long, multiple: Boolean = false)                                    extends ConfirmationResponse
   case class Nack(deliveryTag: Long, multiple: Boolean = false, requeue: Option[Boolean] = None)  extends ConfirmationResponse
-  case class Accept(deliveryTag: Long)                                                            extends ConfirmationResponse
   case class Reject(deliveryTag: Long, requeue: Boolean = false)                                  extends ConfirmationResponse
 }
