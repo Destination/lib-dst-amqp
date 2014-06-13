@@ -11,20 +11,20 @@ class Exchange(val name: String, channel: RMQChannel) {
   private final val defaultEncoding   = "UTF-8"
   private final val defaultMandatory  = false
 
-  def publish(routingKey: String, message: String, mandatory: Boolean, replyTo: String) {
+  def publish(routingKey: String, message: String, mandatory: Boolean, replyTo: String) : Try[Unit] = {
     publish(routingKey, message, mandatory, BasicProperties(replyTo = Some(replyTo)))
   }
-  def publish(routingKey: String, message: String, replyTo: String) {
+  def publish(routingKey: String, message: String, replyTo: String) : Try[Unit] = {
     publish(routingKey, message, defaultMandatory, BasicProperties(replyTo = Some(replyTo)))
   }
 
 
-  def publish(routingKey: String, message: String, mandatory: Boolean = defaultMandatory, properties: BasicProperties = BasicProperties.Empty) {
+  def publish(routingKey: String, message: String, mandatory: Boolean = defaultMandatory, properties: BasicProperties = BasicProperties.Empty) : Try[Unit] = {
     val encoding = properties.contentEncoding.getOrElse(defaultEncoding)
     publish(routingKey, message.getBytes(encoding), mandatory, properties)
   }
 
-  def publish(routingKey: String, message: Array[Byte], mandatory: Boolean, properties: BasicProperties) = Try {
+  def publish(routingKey: String, message: Array[Byte], mandatory: Boolean, properties: BasicProperties) : Try[Unit] = Try {
     channel.basicPublish(name, routingKey, mandatory, false, properties, message)
   }
 
