@@ -2,6 +2,9 @@ package dst.amqp
 
 import play.Logger
 
+import play.api.Play.current
+import play.api.libs.concurrent.Akka
+
 import akka.actor.ActorRef
 import akka.actor.TypedActor
 
@@ -18,6 +21,8 @@ trait ActorConsumer extends Consumer {
 class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends ActorConsumer with TypedActor.Receiver {
   import TypedActor.dispatcher
   import Queue._
+
+  def self = TypedActor.get(Akka.system).getActorRefFor(TypedActor.self[ActorConsumerAdapter])
 
   private var _consumerTag: String = null
   def consumerTag: String = _consumerTag
@@ -42,34 +47,34 @@ class ActorConsumerAdapter(consumer: ActorRef, queue: Queue) extends ActorConsum
   def handleDelivery(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: Array[Byte]) {
     val message = new String(body, "UTF-8")
     Logger.trace(s"{consumer.path} - Received message from queue '${queue.name}': ${message}")
-    consumer ! IncomingMessage(consumerTag, envelope, properties, message)
+    consumer.tell(IncomingMessage(consumerTag, envelope, properties, message), self)
   }
 
 
   override def handleConsumeOk(consumerTag: String) {
     _consumerTag = consumerTag
     Logger.trace(s"${consumer.path} - Consume ok received (${consumerTag})")
-    consumer ! ConsumeOk(consumerTag)
+    consumer.tell(ConsumeOk(consumerTag), self)
   }
 
   override def handleCancelOk(consumerTag: String) {
     Logger.trace("{consumer.path} - Cancel ok received, informing actor")
-    consumer ! CancelOk(consumerTag)
+    consumer.tell(CancelOk(consumerTag), self)
   }
 
   override def handleCancel(consumerTag: String) {
     Logger.trace("{consumer.path} - Cancel received, informing actor")
-    consumer ! Cancel(consumerTag)
+    consumer.tell(Cancel(consumerTag), self)
   }
 
   override def handleRecoverOk(consumerTag: String) {
     Logger.trace("{consumer.path} - Recover ok received, informing actor")
-    consumer ! RecoverOk(consumerTag)
+    consumer.tell(RecoverOk(consumerTag), self)
   }
 
 
   override def handleShutdownSignal(consumerTag: String, sig: ShutdownSignalException) {
     Logger.trace("{consumer.path} - Connection shutdown, informing actor")
-    consumer ! ShutdownSignal(consumerTag, sig)
+    consumer.tell(ShutdownSignal(consumerTag, sig), self)
   }
 }
