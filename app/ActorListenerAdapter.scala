@@ -23,18 +23,18 @@ class ActorListenerAdapter(listener: ActorRef) extends ActorListener {
 
   def handleReturn(replyCode: Int, replyText: String, exchange: String, routingKey: String, properties: AMQP.BasicProperties, body: Array[Byte]) {
     val message = new String(body, "UTF-8")
-    Logger.trace(s"{consumer.path} - Received returned message: ${replyText}")
+    Logger.trace(s"${listener.path} - Received returned message: ${replyText}")
     listener.tell(Queue.ReturnedMessage(replyCode, replyText, exchange, routingKey, properties, message), self)
   }
 
 
   def handleAck(deliveryTag: Long, multiple: Boolean) {
-    Logger.trace(s"{consumer.path} - Received message acknowlegement: ${deliveryTag} (multiple=${multiple})")
+    Logger.trace(s"${listener.path} - Received message acknowlegement: ${deliveryTag} (multiple=${multiple})")
     listener.tell(Queue.Ack(deliveryTag, multiple), self)
   }
 
   def handleNack(deliveryTag: Long, multiple: Boolean) {
-    Logger.trace(s"{consumer.path} - Received lost message: ${deliveryTag} (multiple=${multiple})")
+    Logger.trace(s"${listener.path} - Received lost message: ${deliveryTag} (multiple=${multiple})")
     listener.tell(Queue.Nack(deliveryTag, multiple), self)
   }
 }
