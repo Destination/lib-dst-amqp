@@ -1,2 +1,4 @@
-Destination RabbitMQ AMQP component
-===================================
+lib-dst-amqp
+============
+
+AMQP adapter for Play/Akka
