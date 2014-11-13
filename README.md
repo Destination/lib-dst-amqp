@@ -1,4 +1,4 @@
 lib-dst-amqp
 ============
 
-AMQP adapter for Play/Akka
+AMQP adapter for Akka
