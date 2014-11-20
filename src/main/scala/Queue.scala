@@ -1,8 +1,6 @@
 package dst.amqp
 
-import play.api.Play.current
-
-import play.api.libs.concurrent.Akka
+import akka.actor.ActorContext
 import akka.actor.TypedActor
 import akka.actor.TypedProps
 import akka.actor.ActorRef
@@ -27,23 +25,23 @@ class Queue(val name: String, val channel: RMQChannel) {
     channel.queueUnbind(name, exchange.name, routingKey)
   }
 
-  def subscribe(subscriber: ActorRef, autoAck: Boolean = true) : Try[ActorRef] = Try {
+  def subscribe(subscriber: ActorRef, autoAck: Boolean = true)(implicit context: ActorContext) : Try[ActorRef] = Try {
     this.synchronized {
       val path = subscriber.path.toString
-      val consumerAdapter = TypedActor(Akka.system).typedActorOf(TypedProps(classOf[ActorConsumer], new ActorConsumerAdapter(subscriber, this)))
+      val consumerAdapter = TypedActor(context.system).typedActorOf(TypedProps(classOf[ActorConsumer], new ActorConsumerAdapter(subscriber, this)))
       channel.basicConsume(name, autoAck, consumerAdapter)
       consumers += (path -> consumerAdapter)
       subscriber
     }
   }
 
-  def unsubscribe(subscriber: ActorRef) = Try {
+  def unsubscribe(subscriber: ActorRef)(implicit context: ActorContext) = Try {
     this.synchronized {
       val path = subscriber.path.toString
       if (consumers contains path) {
         val consumerAdapter = consumers(path)
         channel.basicCancel(consumerAdapter.consumerTag)
-        TypedActor(Akka.system).poisonPill(consumerAdapter)
+        TypedActor(context.system).poisonPill(consumerAdapter)
         consumers -= path
       }
     }

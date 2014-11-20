@@ -24,5 +24,3 @@ scalacOptions ++= Seq(
   "-Ywarn-dead-code",
   "-language:reflectiveCalls"
 )
-
-play.Project.playScalaSettings

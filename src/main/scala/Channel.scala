@@ -2,6 +2,8 @@ package dst.amqp
 
 import scala.util.Try
 
+import akka.actor.ActorContext
+
 import akka.actor.ActorRef
 
 import java.util.{Map => JavaMap}
@@ -73,7 +75,7 @@ class Channel(channel: RMQChannel) {
   }
 
 
-  def addReturnListener(listener: ActorRef): Try[ActorListener] = Try{
+  def addReturnListener(listener: ActorRef)(implicit context: ActorContext): Try[ActorListener] = Try{
     this.synchronized {
       val listenerAdapter = listeners.getOrElseUpdate(listener.path.toString, new ActorListenerAdapter(listener))
       channel.addReturnListener(listenerAdapter)
@@ -81,7 +83,7 @@ class Channel(channel: RMQChannel) {
     }
   }
 
-  def removeReturnListener(listener: ActorRef) = Try {
+  def removeReturnListener(listener: ActorRef)(implicit context: ActorContext) = Try {
     val path = listener.path.toString
     this.synchronized {
       if (listeners contains path) {
@@ -93,7 +95,7 @@ class Channel(channel: RMQChannel) {
   }
 
 
-  def addConfirmListener(listener: ActorRef): Try[ActorListener] = Try{
+  def addConfirmListener(listener: ActorRef)(implicit context: ActorContext): Try[ActorListener] = Try{
     this.synchronized {
       val listenerAdapter = listeners.getOrElseUpdate(listener.path.toString, new ActorListenerAdapter(listener))
       channel.addConfirmListener(listenerAdapter)
@@ -101,7 +103,7 @@ class Channel(channel: RMQChannel) {
     }
   }
 
-  def removeConfirmListener(listener: ActorRef) = Try {
+  def removeConfirmListener(listener: ActorRef)(implicit context: ActorContext) = Try {
     val path = listener.path.toString
     this.synchronized {
       if (listeners contains path) {
