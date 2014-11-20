@@ -3,7 +3,6 @@ package dst.amqp
 import scala.util.Try
 
 import com.rabbitmq.client.{Channel => RMQChannel}
-import com.rabbitmq.client.MessageProperties
 
 class Exchange(val name: String, channel: RMQChannel) {
   import BasicPropertiesImplicit._

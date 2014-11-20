@@ -13,11 +13,6 @@ import java.lang.{Object => JavaObject}
 import scala.collection.mutable
 
 import com.rabbitmq.client.{Channel => RMQChannel}
-import com.rabbitmq.client.AMQP
-import com.rabbitmq.client.MessageProperties
-import com.rabbitmq.client.ShutdownSignalException
-import com.rabbitmq.client.Envelope
-import com.rabbitmq.client.ConnectionFactory
 
 import Utils.transformArguments
 

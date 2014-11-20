@@ -11,7 +11,6 @@ import scala.collection.mutable
 import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.{Channel => RMQChannel}
 import com.rabbitmq.client.Envelope
-import com.rabbitmq.client.Consumer
 import com.rabbitmq.client.ShutdownSignalException
 
 class Queue(val name: String, val channel: RMQChannel) {

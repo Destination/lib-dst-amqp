@@ -10,9 +10,6 @@ import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.ReturnListener
 import com.rabbitmq.client.ConfirmListener
 
-import com.rabbitmq.client.Envelope
-import com.rabbitmq.client.ShutdownSignalException
-
 trait ActorListener extends ReturnListener with ConfirmListener
 
 class ActorListenerAdapter(listener: ActorRef)(implicit context: ActorContext) extends ActorListener {
