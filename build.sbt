@@ -2,9 +2,15 @@ name := "dst-amqp"
 
 organization := "se.destination"
 
-version := "1.5"
+version := "1.6-SNAPSHOT"
 
-scalaVersion := "2.10.2"
+publishTo := {
+  val repoPath = Path.userHome.absolutePath + "/Dropbox/Destination/dst_maven"
+  if (version.value.trim.endsWith("SNAPSHOT"))
+    Some(Resolver.file("file", new File(repoPath + "/snapshots"))(Resolver.ivyStylePatterns))
+  else
+    Some(Resolver.file("file", new File(repoPath + "/releases"))(Resolver.ivyStylePatterns))
+}
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.2.0",
