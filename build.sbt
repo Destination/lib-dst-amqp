@@ -4,14 +4,6 @@ organization := "se.destination"
 
 version := "1.6-SNAPSHOT"
 
-publishTo := {
-  val repoPath = Path.userHome.absolutePath + "/Dropbox/Destination/dst_maven"
-  if (version.value.trim.endsWith("SNAPSHOT"))
-    Some(Resolver.file("file", new File(repoPath + "/snapshots"))(Resolver.ivyStylePatterns))
-  else
-    Some(Resolver.file("file", new File(repoPath + "/releases"))(Resolver.ivyStylePatterns))
-}
-
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.2.0",
   "com.rabbitmq" % "amqp-client" % "2.8.1"
